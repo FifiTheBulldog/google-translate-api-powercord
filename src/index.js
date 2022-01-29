@@ -1,6 +1,5 @@
 const querystring = require("querystring");
-const got = require("got");
-
+const { get, post } = requiire("powercord/http");
 const languages = require("./languages");
 const tokenGenerator = require("./tokenGenerator");
 
@@ -59,27 +58,24 @@ async function translate(text, options) {
 
     // Append query string to the request URL.
     let url = `${baseUrl}?${querystring.stringify(data)}`;
-
-    let requestOptions;
+    const usePost = url.length > 2048;
+    let req;
     // If request URL is greater than 2048 characters, use POST method.
-    if (url.length > 2048) {
+    if (usePost) {
         delete data.q;
-        requestOptions = [
-            `${baseUrl}?${querystring.stringify(data)}`,
-            {
-                method: "POST",
-                form: {
+        url = `${baseUrl}?${querystring.stringify(data)}`;
+        req = post(url)
+                .set("Content-Type", "application/x-www-form-urlencoded")
+                .send({
                     q: text
-                }
-            }
-        ];
+                });
     }
     else {
-        requestOptions = [ url ];
+        req = get(url);
     }
 
     // Request translation from Google Translate.
-    let response = await got(...requestOptions);
+    let response = await req.execute();
 
     let result = {
         text: "",

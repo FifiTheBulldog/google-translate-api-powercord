@@ -5,7 +5,7 @@
  * Everything between 'BEGIN' and 'END' was copied from the script above.
  */
 
-const got = require("got");
+const { get } = require("powercord/http");
 
 /* eslint-disable */
 // BEGIN
@@ -70,7 +70,7 @@ async function updateTKK() {
         let now = Math.floor(Date.now() / 3600000);
 
         if (Number(window.TKK.split(".")[0]) !== now) {
-            let res = await got("https://translate.google.com");
+            const res = await (get("https://translate.google.com")).execute();
 
             // code will extract something like tkk:'1232135.131231321312', we need only value
             const code = res.body.match(/tkk:'\d+.\d+'/g);

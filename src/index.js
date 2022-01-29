@@ -1,4 +1,3 @@
-const querystring = require("querystring");
 const { get, post } = requiire("powercord/http");
 const languages = require("./languages");
 const tokenGenerator = require("./tokenGenerator");
@@ -14,15 +13,14 @@ async function translate(text, options) {
   text = String(text);
 
   // Check if a lanugage is in supported; if not, throw an error object.
-  let error;
-  [ options.from, options.to ].forEach((lang) => {
+  for (const lang of [ options.from, options.to ]) {
     if (lang && !languages.isSupported(lang)) {
-      error = new Error();
+      const error = new Error();
       error.code = 400;
       error.message = `The language '${lang}' is not supported.`;
+      throw error;
     }
-  });
-  if (error) throw error;
+  };
 
   // If options object doesn"t have "from" language, set it to "auto".
   if (!Object.prototype.hasOwnProperty.call(options, "from")) options.from = "auto";
@@ -36,11 +34,11 @@ async function translate(text, options) {
   options.to = languages.getISOCode(options.to);
 
   // Generate Google Translate token for the text to be translated.
-  let token = await tokenGenerator.generate(text);
+  const token = await tokenGenerator.generate(text);
 
   // URL & query string required by Google Translate.
-  let baseUrl = "https://translate.google.com/translate_a/single";
-  let data = {
+  const baseUrl = "https://translate.google.com/translate_a/single";
+  const data = {
     client: "gtx",
     sl: options.from,
     tl: options.to,
@@ -57,13 +55,12 @@ async function translate(text, options) {
   };
 
   // Append query string to the request URL.
-  let url = `${baseUrl}?${querystring.stringify(data)}`;
-  const usePost = url.length > 2048;
+  let url = `${baseUrl}?${new URLSearchParams(data).toString()}`;
   let req;
   // If request URL is greater than 2048 characters, use POST method.
-  if (usePost) {
+  if (url.length > 2048) {
     delete data.q;
-    url = `${baseUrl}?${querystring.stringify(data)}`;
+    url = `${baseUrl}?${new URLSearchParams(data).toString()}`;
     req = post(url)
             .set("Content-Type", "application/x-www-form-urlencoded")
             .send({ q: text });
@@ -72,7 +69,7 @@ async function translate(text, options) {
   }
 
   // Request translation from Google Translate.
-  let response = await req.execute();
+  const response = await req.execute();
 
   let result = {
     text: "",
@@ -98,32 +95,27 @@ async function translate(text, options) {
   // Parse string body to JSON and add it to result object.
 
   let body = JSON.parse(response.body);
-  body[0].forEach((obj) => {
+  for (const obj of body[0]) {
     if (obj[0]) {
       result.text += obj[0];
     }
-  });
+  };
 
   if (body[2] === body[8][0][0]) {
     result.from.language.iso = body[2];
-  }
-  else {
+  } else {
     result.from.language.didYouMean = true;
     result.from.language.iso = body[8][0][0];
   }
 
   if (body[7] && body[7][0]) {
-    let str = body[7][0];
-
-    str = str.replace(/<b><i>/g, "[");
-    str = str.replace(/<\/i><\/b>/g, "]");
-
-    result.from.text.value = str;
+    result.from.text.value = body[7][0]
+                               .replace(/<b><i>/g, "[")
+                               .replace(/<\/i><\/b>/g, "]");
 
     if (body[7][5] === true) {
       result.from.text.autoCorrected = true;
-    }
-    else {
+    } else {
       result.from.text.didYouMean = true;
     }
   }

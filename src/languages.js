@@ -127,7 +127,7 @@ function getISOCode(language) {
   language = language.toLowerCase();
   if (language in languages) return language;
 
-  let keys = Object.keys(languages).filter((key) => {
+  const keys = Object.keys(languages).filter((key) => {
     if (typeof languages[key] !== "string") return false;
 
     return languages[key].toLowerCase() === language;

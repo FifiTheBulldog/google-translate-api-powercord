@@ -84,7 +84,7 @@ async function updateTKK() {
     }
   } catch (e) {
     if (e.name === "HTTPError") {
-      let error = new Error();
+      const error = new Error();
       error.name = e.name;
       error.statusCode = e.statusCode;
       error.statusMessage = e.statusMessage;

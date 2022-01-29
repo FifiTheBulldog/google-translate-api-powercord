@@ -60,16 +60,14 @@ let xr = function(a, b) {
 
 const config = new Map();
 
-const window = {
-  TKK: config.get("TKK") || "0"
-};
+let TKK = config.get("TKK") || "0"
 
 // eslint-disable-next-line require-jsdoc
 async function updateTKK() {
   try {
-    let now = Math.floor(Date.now() / 3600000);
+    const now = Math.floor(Date.now() / 3600000);
 
-    if (Number(window.TKK.split(".")[0]) !== now) {
+    if (Number(TKK.split(".")[0]) !== now) {
       const res = await (get("https://translate.google.com")).execute();
 
       // code will extract something like tkk:'1232135.131231321312', we need only value
@@ -78,7 +76,7 @@ async function updateTKK() {
       if (code.length > 0) {
         // extracting value tkk:'1232135.131231321312', this will extract only token: 1232135.131231321312
         const xt = code[0].split(":")[1].replace(/'/g, "");
-        window.TKK = xt;
+        TKK = xt;
         config.set("TKK", xt);
       }
     }

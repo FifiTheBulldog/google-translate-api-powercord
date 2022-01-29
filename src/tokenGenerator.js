@@ -96,8 +96,7 @@ async function updateTKK() {
 async function generate(text) {
   try {
     await updateTKK();
-    let tk = zr(text);
-    tk = tk.replace("&tk=", "");
+    const tk = zr(text).replace("&tk=", "");
     return { name: "tk", value: tk };
   } catch (error) {
     return error;

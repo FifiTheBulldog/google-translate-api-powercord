@@ -1,6 +1,6 @@
 const { get, post } = require("powercord/http");
 const languages = require("./languages");
-const tokenGenerator = require("./tokenGenerator");
+const { stringify: qsEncode} = require("querystring");
 
 /**
  * @function translate
@@ -33,9 +33,6 @@ async function translate(text, options) {
   options.from = languages.getISOCode(options.from);
   options.to = languages.getISOCode(options.to);
 
-  // Generate Google Translate token for the text to be translated.
-  const token = await tokenGenerator.generate(text);
-
   // URL & query string required by Google Translate.
   const baseUrl = "https://translate.google.com/translate_a/single";
   const data = {
@@ -50,17 +47,16 @@ async function translate(text, options) {
     ssel: 0,
     tsel: 0,
     kc: 7,
-    q: text,
-    [token.name]: token.value
+    q: text
   };
 
   // Append query string to the request URL.
-  let url = `${baseUrl}?${new URLSearchParams(data).toString()}`;
+  let url = `${baseUrl}?${qsEncode(data)}`;
   let req;
   // If request URL is greater than 2048 characters, use POST method.
   if (url.length > 2048) {
     delete data.q;
-    url = `${baseUrl}?${new URLSearchParams(data).toString()}`;
+    url = `${baseUrl}?${qsEncode(data)}`;
     req = post(url)
             .set("Content-Type", "application/x-www-form-urlencoded")
             .send({ q: text });
@@ -71,7 +67,7 @@ async function translate(text, options) {
   // Request translation from Google Translate.
   const response = await req.execute();
 
-  let result = {
+  const result = {
     text: "",
     from: {
       language: {
@@ -91,10 +87,10 @@ async function translate(text, options) {
   if (options.raw) {
     result.raw = response.body;
   }
-
+  console.log(response.body);
   // Parse string body to JSON and add it to result object.
 
-  let body = JSON.parse(response.body);
+  let { body } = response;
   for (const obj of body[0]) {
     if (obj[0]) {
       result.text += obj[0];

@@ -1,6 +1,6 @@
 const { get, post } = require("powercord/http");
 const languages = require("./languages");
-const { stringify: qsEncode} = require("querystring");
+const { stringify: qsEncode } = require("querystring");
 
 const BASE_URL = "https://translate.google.com/translate_a/single";
 

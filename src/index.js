@@ -2,6 +2,8 @@ const { get, post } = require("powercord/http");
 const languages = require("./languages");
 const { stringify: qsEncode} = require("querystring");
 
+const BASE_URL = "https://translate.google.com/translate_a/single";
+
 /**
  * @function translate
  * @param {String} text The text to be translated.
@@ -15,12 +17,9 @@ async function translate(text, options) {
   // Check if a lanugage is in supported; if not, throw an error object.
   for (const lang of [ options.from, options.to ]) {
     if (lang && !languages.isSupported(lang)) {
-      const error = new Error();
-      error.code = 400;
-      error.message = `The language '${lang}' is not supported.`;
-      throw error;
+      throw new Error(`The language '${lang}' is not supported.`);
     }
-  };
+  }
 
   // If options object doesn"t have "from" language, set it to "auto".
   if (!Object.prototype.hasOwnProperty.call(options, "from")) options.from = "auto";
@@ -34,7 +33,6 @@ async function translate(text, options) {
   options.to = languages.getISOCode(options.to);
 
   // URL & query string required by Google Translate.
-  const baseUrl = "https://translate.google.com/translate_a/single";
   const data = {
     client: "gtx",
     sl: options.from,
@@ -51,12 +49,12 @@ async function translate(text, options) {
   };
 
   // Append query string to the request URL.
-  let url = `${baseUrl}?${qsEncode(data)}`;
+  let url = `${BASE_URL}?${qsEncode(data)}`;
   let req;
   // If request URL is greater than 2048 characters, use POST method.
   if (url.length > 2048) {
     delete data.q;
-    url = `${baseUrl}?${qsEncode(data)}`;
+    url = `${BASE_URL}?${qsEncode(data)}`;
     req = post(url)
             .set("Content-Type", "application/x-www-form-urlencoded")
             .send({ q: text });
@@ -65,7 +63,7 @@ async function translate(text, options) {
   }
 
   // Request translation from Google Translate.
-  const response = await req.execute();
+  const { body } = await req.execute();
 
   const result = {
     text: "",
@@ -85,12 +83,10 @@ async function translate(text, options) {
 
   // If user requested a raw output, add the raw response to the result
   if (options.raw) {
-    result.raw = response.body;
+    result.raw = body;
   }
-  console.log(response.body);
-  // Parse string body to JSON and add it to result object.
 
-  let { body } = response;
+  // Add JSON body to result object.
   for (const obj of body[0]) {
     if (obj[0]) {
       result.text += obj[0];

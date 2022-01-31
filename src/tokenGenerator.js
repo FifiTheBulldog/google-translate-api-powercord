@@ -64,43 +64,27 @@ let TKK = config.get("TKK") || "0"
 
 // eslint-disable-next-line require-jsdoc
 async function updateTKK() {
-  try {
-    const now = Math.floor(Date.now() / 3600000);
+  const now = Math.floor(Date.now() / 3600000);
 
-    if (Number(TKK.split(".")[0]) !== now) {
-      const res = await (get("https://translate.google.com")).execute();
+  if (Number(TKK.split(".")[0]) !== now) {
+    const res = await (get("https://translate.google.com")).execute();
 
-      // code will extract something like tkk:'1232135.131231321312', we need only value
-      const code = res.body.match(/tkk:'\d+.\d+'/g);
+    // code will extract something like tkk:'1232135.131231321312', we need only value
+    const code = res.body.match(/tkk:'\d+.\d+'/g);
 
-      if (code.length > 0) {
-        // extracting value tkk:'1232135.131231321312', this will extract only token: 1232135.131231321312
-        const xt = code[0].split(":")[1].replace(/'/g, "");
-        TKK = xt;
-        config.set("TKK", xt);
-      }
+    if (code.length > 0) {
+      // extracting value tkk:'1232135.131231321312', this will extract only token: 1232135.131231321312
+      const xt = code[0].split(":")[1].replace(/'/g, "");
+      TKK = xt;
+      config.set("TKK", xt);
     }
-  } catch (e) {
-    if (e.name === "HTTPError") {
-      const error = new Error();
-      error.name = e.name;
-      error.statusCode = e.statusCode;
-      error.statusMessage = e.statusMessage;
-      throw error;
-    }
-    throw e;
   }
 }
 
 // eslint-disable-next-line require-jsdoc
 async function generate(text) {
-  try {
-    await updateTKK();
-    const tk = zr(text).replace("&tk=", "");
-    return { name: "tk", value: tk };
-  } catch (error) {
-    return error;
-  }
+  await updateTKK();
+  return { name: "tk", value: zr(text).replace("&tk=", "") };
 }
 
 module.exports.generate = generate;
